@@ -83,6 +83,8 @@ resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.eip[each.key].id
   subnet_id = aws_subnet.public[each.value].id
 
+  depends_on = [ aws_eip.eip ]
+  
   /* lifecycle {
     precondition {
     condition = alltrue([ for az in keys(local.nat_azs) : contains(keys(aws_eip.eip), az)])
@@ -106,7 +108,7 @@ resource "aws_route_table" "public_rt" {
 }
 
 resource "aws_route_table" "private_rt_app" {
-    for_each = var.enable_nat ? local.app_azs : {}
+    for_each = local.app_azs 
 
   vpc_id = aws_vpc.main.id
 
@@ -138,6 +140,8 @@ resource "aws_route" "nat_route" {
   route_table_id = aws_route_table.private_rt_app[each.key].id
   nat_gateway_id = aws_nat_gateway.nat[each.key].id
   destination_cidr_block = "0.0.0.0/0"
+
+  depends_on = [ aws_nat_gateway.nat ]
 }
 
 resource "aws_route_table_association" "igw_route_association" {
@@ -146,8 +150,8 @@ resource "aws_route_table_association" "igw_route_association" {
   subnet_id = each.value.id
 }
 
-resource "aws_route_table_association" "nat_route_association" {
-  for_each = var.enable_nat ? local.app_subnets : {}
+resource "aws_route_table_association" "app_route_association" {
+  for_each = local.app_subnets
 
   subnet_id = aws_subnet.private[each.key].id
   route_table_id = aws_route_table.private_rt_app[each.value].id
