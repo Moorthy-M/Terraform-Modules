@@ -7,11 +7,11 @@ output "public_subnets_by_az" {
 }
 
 output "private_app_subnets_by_az" {
-  value = local.app_azs
+  value = { for id, obj in local.app_subnets : aws_subnet.private[id].availability_zone => aws_subnet.private[id].id... }
 }
 
 output "private_db_subnets_by_az" {
-  value = local.db_azs
+  value = { for id, obj in local.db_subnets : aws_subnet.private[id].availability_zone => aws_subnet.private[id].id... }
 }
 
 output "public_subnets" {
@@ -19,9 +19,9 @@ output "public_subnets" {
 }
 
 output "private_app_subnets" {
-  value = sort(flatten(values(local.app_azs)))
+  value = sort([for id, obj in local.app_subnets : aws_subnet.private[id].id])
 }
 
 output "private_db_subnets" {
-  value = sort(flatten(values(local.db_azs)))
+  value = sort([for id, obj in local.db_subnets : aws_subnet.private[id].id])
 }
