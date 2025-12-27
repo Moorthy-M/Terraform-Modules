@@ -40,3 +40,17 @@ variable "enable_nat" {
   default = false
   description = "NAT"
 }
+
+variable "enable_vpc_flow_logs" {
+  type = bool
+  default = true
+  description = "VPC Flow Logs"
+}
+
+variable "vpc_role_arn" {
+  type = string
+  default = null
+  description = "VPC Flow Logs Assume Role ARN"
+}
+
+
