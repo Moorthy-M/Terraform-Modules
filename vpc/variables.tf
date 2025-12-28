@@ -51,6 +51,14 @@ variable "vpc_role_arn" {
   type = string
   default = null
   description = "VPC Flow Logs Assume Role ARN"
+
+  validation {
+    condition = (
+      var.enable_vpc_flow_logs == false ||
+      (var.enable_vpc_flow_logs == true && var.vpc_role_arn != null && length(var.vpc_role_arn) > 0)
+    )
+    error_message = "vpc_role_arn must be provided when enable_vpc_flow_logs is true."
+  }
 }
 
 
