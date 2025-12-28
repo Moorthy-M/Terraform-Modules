@@ -13,16 +13,35 @@ variable "subnets" {
 variable "ingress_rules" {
   type = list(object(
     {
-      from_port = number
-      to_port = number
-      protocol = string
-      cidr_blocks = optional(list(string), [])
+      from_port       = number
+      to_port         = number
+      protocol        = string
+      cidr_blocks     = optional(list(string), [])
       security_groups = optional(list(string), [])
+      description     = optional(string, "")
     }
   ))
 
   validation {
-    condition = alltrue([for i in var.ingress_rules : i.from_port <= i.to_port])
+    condition     = alltrue([for i in var.ingress_rules : i.from_port <= i.to_port])
+    error_message = "from_port must be <= to_port"
+  }
+}
+
+variable "egress_rules" {
+  type = list(object(
+    {
+      from_port       = number
+      to_port         = number
+      protocol        = string
+      cidr_blocks     = optional(list(string), [])
+      security_groups = optional(list(string), [])
+      description     = optional(string, "")
+    }
+  ))
+
+  validation {
+    condition     = alltrue([for i in var.egress_rules : i.from_port <= i.to_port])
     error_message = "from_port must be <= to_port"
   }
 }
@@ -32,21 +51,13 @@ variable "alb_name" {
 }
 
 variable "alb_internal" {
-  type = bool
+  type    = bool
   default = false
 }
 
 variable "enable_deletion_protection" {
-  type = bool
+  type    = bool
   default = true
-}
-
-variable "certificate_arn" {
-  type = string
-}
-
-variable "ssl_policy" {
-  type = string
 }
 
 variable "target_port" {
@@ -79,13 +90,5 @@ variable "health_check_interval" {
 
 variable "health_check_timeout" {
   type = number
-}
-
-variable "alb_access_log_enable" {
-  type = bool
-}
-
-variable "alb_access_log_bucket" {
-  type = string
 }
 
