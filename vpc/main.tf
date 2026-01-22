@@ -167,24 +167,14 @@ resource "aws_route_table_association" "db_route_association" {
 # DB subnets intentionally have no internet route.
 # Access via VPC endpoints or bastion only.
 
-resource "aws_cloudwatch_log_group" "cloudwatch_log" {
-  count = var.enable_vpc_flow_logs ? 1 : 0
-  name = "/vpc/flow-logs"
-  retention_in_days = 30
-  tags = merge(var.tags,
-  {
-    Name = "Cloudwatch-Log-Group"
-  })
-}
-
 resource "aws_flow_log" "flow_logs" {
   count = var.enable_vpc_flow_logs ? 1 : 0
 
   vpc_id = aws_vpc.main.id
-  iam_role_arn = var.vpc_role_arn
+  iam_role_arn = var.vpc_flowlogs_role_arn
 
-  log_destination = aws_cloudwatch_log_group.cloudwatch_log[0].arn
-  log_destination_type = "cloud-watch-logs"
+  log_destination = var.flow_logs_destination
+  log_destination_type = var.flow_logs_bucket ? "s3" : "cloud-watch-logs"
 
   max_aggregation_interval = 60
   traffic_type = "REJECT"

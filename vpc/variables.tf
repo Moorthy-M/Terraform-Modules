@@ -47,18 +47,24 @@ variable "enable_vpc_flow_logs" {
   description = "VPC Flow Logs"
 }
 
-variable "vpc_role_arn" {
+variable "vpc_flowlogs_role_arn" {
   type = string
   default = null
   description = "VPC Flow Logs Assume Role ARN"
 
   validation {
-    condition = (
-      var.enable_vpc_flow_logs == false ||
-      (var.enable_vpc_flow_logs == true && var.vpc_role_arn != null && length(var.vpc_role_arn) > 0)
-    )
-    error_message = "vpc_role_arn must be provided when enable_vpc_flow_logs is true."
+    condition = ( !var.enable_vpc_flow_logs || var.flow_logs_bucket || (var.vpc_flowlogs_role_arn != null && length(var.vpc_flowlogs_role_arn) > 0))
+    error_message = "vpc_flowlogs_role_arn must be set when VPC Flow Logs are enabled and CloudWatch Logs is used."
   }
+}
+
+variable "flow_logs_destination" {
+  type = string
+}
+
+variable "flow_logs_bucket" {
+  type = bool
+  default = false
 }
 
 
