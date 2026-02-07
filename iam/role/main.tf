@@ -20,7 +20,7 @@ data "aws_iam_policy_document" "trust" {
   for_each = var.create_role
 
   statement {
-    sid = "${each.key}assumerole"
+    sid = "AssumeRole"
     effect = "Allow"
 
   principals {
