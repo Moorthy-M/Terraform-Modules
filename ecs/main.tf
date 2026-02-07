@@ -37,7 +37,7 @@ resource "aws_ecs_service" "service" {
       capacity_provider = capacity_provider_strategy.value.capacity_provider
       weight = capacity_provider_strategy.value.weight
     }
-  } */  
+  } */ 
 
   dynamic network_configuration {
     for_each = local.is_fargate ? [1] : []
@@ -55,6 +55,10 @@ resource "aws_ecs_service" "service" {
     container_port = var.service_container_port
   }
 
+  lifecycle {
+    ignore_changes = [ task_definition ]
+  }
+  
   propagate_tags = "SERVICE"
 
   tags = merge(var.tags, {
