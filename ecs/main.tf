@@ -12,7 +12,20 @@ resource "aws_ecs_task_definition" "task_definition" {
     execution_role_arn = var.execution_role_arn
     task_role_arn = var.task_role_arn
 
-    container_definitions = jsonencode(var.container_definitions)
+    container_definitions = jsonencode([
+    {
+      name  = var.container.name
+      image = var.container.image
+      essential = true
+      
+      portMappings = [
+        {
+          containerPort = var.container.port
+          protocol      = "tcp"
+        }
+      ]
+    }
+  ])
 
     tags = merge(var.tags, {
     Name = "${var.task_definition_family}-family"
@@ -51,8 +64,8 @@ resource "aws_ecs_service" "service" {
 
   load_balancer {
     target_group_arn = var.service_target_group_arn
-    container_name = var.service_container_name
-    container_port = var.service_container_port
+    container_name = var.container.name
+    container_port = var.container.port
   }
 
   lifecycle {

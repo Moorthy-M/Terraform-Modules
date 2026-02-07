@@ -32,8 +32,12 @@ variable "task_role_arn" {
     type = string
 }
 
-variable "container_definitions" {
-    type = list(any)
+variable "container" {
+    type = object({
+      name  = string
+      port  = number
+      image = string
+    })
 }
 
 //Service
@@ -72,16 +76,6 @@ variable "service_desired_count" {
 
 variable "service_target_group_arn" {
     type = string
-}
-
-variable "service_container_name" {
-    type = string
-  default = "app"
-}
-
-variable "service_container_port" {
-    type = number
-  default = 80
 }
 
 variable "service_subnets" {
