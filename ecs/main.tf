@@ -2,6 +2,77 @@ locals {
   is_fargate = upper(var.service_launch_type) == "FARGATE"
 }
 
+resource "aws_security_group" "service" {
+  name   = "${var.service_name}-service-sg"
+  vpc_id = var.network.vpc
+
+  ingress {
+    from_port       = var.container.port
+    to_port         = var.container.port
+    protocol        = "tcp"
+    security_groups = var.network.security_groups
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(var.tags,
+    {
+      Name = "SG-${var.service_name}-service"
+  })
+}
+
+resource "aws_lb_target_group" "target" {
+  name = "${var.service_name}-target-group"
+  vpc_id = var.network.vpc
+
+  port = var.container.port
+  protocol = var.alb.protocol
+  target_type = local.is_fargate ? "ip" : "instance"
+
+  health_check {
+    path = var.alb.health_path
+    protocol = var.alb.protocol
+    matcher = "200-399"
+    interval = 30
+    timeout = 10
+    healthy_threshold = 3
+    unhealthy_threshold = 2
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = merge(var.tags, {
+    Name = "${var.service_name}-target-group"
+  })
+}
+
+resource "aws_lb_listener_rule" "listener" {
+  listener_arn = var.alb.listener_arn
+
+  priority = var.alb.priority
+
+  action {
+    type = "forward"
+    target_group_arn = aws_lb_target_group.target.arn
+  }
+
+  condition {
+    path_pattern {
+      values = [ var.alb.route_path ]
+    }
+  }
+  tags = merge(var.tags, {
+    Name = "${var.service_name}-${aws_lb_target_group.target.name}-listener_rule"
+  })
+}
+
 resource "aws_ecs_task_definition" "task_definition" {
     family = var.task_definition_family
     requires_compatibilities = local.is_fargate ? ["FARGATE"] : ["EC2"]
@@ -56,14 +127,14 @@ resource "aws_ecs_service" "service" {
     for_each = local.is_fargate ? [1] : []
 
     content {
-      subnets = var.service_subnets
-    security_groups = var.service_security_groups
+      subnets = var.network.subnets
+    security_groups = [aws_security_group.service.id]
     assign_public_ip = false
     }
   }
 
   load_balancer {
-    target_group_arn = var.service_target_group_arn
+    target_group_arn = aws_lb_target_group.target.arn
     container_name = var.container.name
     container_port = var.container.port
   }

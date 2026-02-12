@@ -32,12 +32,35 @@ variable "task_role_arn" {
     type = string
 }
 
+variable "network" {
+    type = object({
+      vpc  = string
+      subnets  = list(string)
+      security_groups = list(string)
+    })
+}
+
+variable "alb" {
+    type = object({
+      listener_arn  = string
+      priority = number
+      health_path = string
+      route_path = string
+      protocol  = string
+    })
+}
+
 variable "container" {
     type = object({
       name  = string
       port  = number
       image = string
     })
+}
+
+variable "health_check_path" {
+    type = string
+    default = "/"
 }
 
 //Service
@@ -72,17 +95,5 @@ variable "service_launch_type" {
 variable "service_desired_count" {
     type = number
   default = 2
-}
-
-variable "service_target_group_arn" {
-    type = string
-}
-
-variable "service_subnets" {
-  type = list(string)
-}
-
-variable "service_security_groups" {
-  type = list(string)
 }
 
