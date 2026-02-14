@@ -92,3 +92,7 @@ variable "health_check_timeout" {
   type = number
 }
 
+variable "log_bucket" {
+  type = string
+}
+

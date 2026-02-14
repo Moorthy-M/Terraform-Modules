@@ -42,6 +42,12 @@ resource "aws_lb" "alb" {
 
   enable_deletion_protection = var.enable_deletion_protection
 
+  access_logs {
+    bucket = var.log_bucket
+    prefix = "alb"
+    enabled = true
+  }
+
   tags = merge(var.tags,
     {
       Name = "ALB-${var.alb_name}"
