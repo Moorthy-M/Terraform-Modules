@@ -73,6 +73,15 @@ resource "aws_lb_listener_rule" "listener" {
   })
 }
 
+resource "aws_cloudwatch_log_group" "ecs_logs" {
+  name              = "/ecs/${var.service_name}"
+  retention_in_days = 14
+
+  tags = merge(var.tags, {
+    "Service" = "${var.service_name}"
+  })
+}
+
 resource "aws_ecs_task_definition" "task_definition" {
     family = var.task_definition_family
     requires_compatibilities = local.is_fargate ? ["FARGATE"] : ["EC2"]
@@ -95,6 +104,15 @@ resource "aws_ecs_task_definition" "task_definition" {
           protocol      = "tcp"
         }
       ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs_logs.name
+          awslogs-region        = "ap-south-1"
+          awslogs-stream-prefix = "ecs"
+        }
+      }
     }
   ])
 
