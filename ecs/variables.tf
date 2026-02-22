@@ -4,6 +4,10 @@ variable "tags" {
 }
 
 // Cluster
+variable "cluster_name" {
+    type = string
+}
+
 variable "cluster_id" {
     type = string
 }
@@ -55,7 +59,27 @@ variable "container" {
       name  = string
       port  = number
       image = string
+      secrets = optional(bool, false)
     })
+}
+
+variable "db_secrets_arn" {
+    type = string
+    default = ""
+}
+
+variable "db_environments" {
+    type = object({
+      host = string
+      port = number
+      name = string
+    })
+
+    default = {
+      host = ""
+      port = -1
+      name = ""
+    }
 }
 
 variable "health_check_path" {

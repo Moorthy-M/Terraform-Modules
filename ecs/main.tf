@@ -1,5 +1,31 @@
 locals {
   is_fargate = upper(var.service_launch_type) == "FARGATE"
+
+  secrets = !var.container.secrets ? [] : [
+    {
+    name      = "DB_USER"
+    valueFrom = "${var.db_secrets_arn}:username::"
+    },
+    {
+      name      = "DB_PASSWORD"
+      valueFrom = "${var.db_secrets_arn}:password::"
+    }
+  ]
+
+  environment = !var.container.secrets ? [] : [
+    {
+      name      = "DB_HOST"
+      value     = var.db_environments.host
+    },
+    {
+      name      = "DB_PORT"
+      value     = "${var.db_environments.port}"
+    },
+    {
+      name      = "DB_NAME"
+      value     = var.db_environments.name
+    }
+  ]
 }
 
 resource "aws_security_group" "service" {
@@ -82,6 +108,33 @@ resource "aws_cloudwatch_log_group" "ecs_logs" {
   })
 }
 
+resource "aws_appautoscaling_target" "ecs_target" {
+  max_capacity       = 5
+  min_capacity       = 2
+  resource_id        = "service/${var.cluster_name}/${aws_ecs_service.service.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+resource "aws_appautoscaling_policy" "cpu_policy" {
+  name               = "${aws_ecs_service.service.name}-cpu-scaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.ecs_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_target.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    target_value = 60.0
+
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 120
+  }
+}
+
 resource "aws_ecs_task_definition" "task_definition" {
     family = var.task_definition_family
     requires_compatibilities = local.is_fargate ? ["FARGATE"] : ["EC2"]
@@ -113,6 +166,9 @@ resource "aws_ecs_task_definition" "task_definition" {
           awslogs-stream-prefix = "ecs"
         }
       }
+
+      secrets = local.secrets
+      environment = local.environment
     }
   ])
 
